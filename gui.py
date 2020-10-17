@@ -5,7 +5,8 @@ class GUI:
     def __init__(self, window_title, location_name, occupancy_limit, video_source = 0):
         self.window_title = window_title
 
-        cv2.namedWindow(self.window_title)
+        cv2.namedWindow(self.window_title, cv2.WND_PROP_FULLSCREEN)
+        cv2.setWindowProperty(self.window_title, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
         self.camera = Camera(video_source)
         self.frame = np.zeros((self.camera.width, self.camera.height, 3))
@@ -47,8 +48,6 @@ class GUI:
             self.frame = cv2.putText(self.frame, "Occupancy: " + str(self.occupancy), ((self.camera.width - textsize[0]) // 2, (int(0.1 * self.camera.height) + textsize[1]) // 2 + int(1.1 * self.camera.height)), cv2.FONT_HERSHEY_COMPLEX, 1.5, (0, 255, 0), 3)
         else:
             self.frame = cv2.putText(self.frame, "Occupancy: " + str(self.occupancy), ((self.camera.width - textsize[0]) // 2, (int(0.1 * self.camera.height) + textsize[1]) // 2 + int(1.1 * self.camera.height)), cv2.FONT_HERSHEY_COMPLEX, 1.5, (0, 0, 255), 3)
-
-
     def person_annotate(self):
         if(self.occupancy < self.occupancy_limit):
             for blob in self.blob_array:
