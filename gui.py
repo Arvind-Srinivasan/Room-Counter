@@ -1,68 +1,86 @@
-import tkinter
 import cv2
-from PIL import ImageTk
-import PIL
+import numpy as np
 
-class App:
-    def __init__(self, window, window_title, video_source=0):
-        self.window = window
-        self.window.title(window_title)
-        self.video_source = video_source
+class GUI:
+    def __init__(self, window_title, location_name, occupancy_limit, video_source = 0):
+        self.window_title = window_title
 
-        # open video source
-        self.vid = MyVideoCapture(video_source)
+        cv2.namedWindow(self.window_title)
 
-        # Create a canvas that can fit the above video source size
-        self.canvas = tkinter.Canvas(window, width=self.vid.width, height=self.vid.height)
-        self.canvas.pack()
+        self.camera = Camera(video_source)
+        self.frame = np.zeros((self.camera.width, self.camera.height, 3))
 
-        # After it is called once, the update method will be automatically called every delay milliseconds
-        self.delay = 1
+        self.location_name = location_name
+        self.occupancy_limit = occupancy_limit
 
-        self.update()
+        self.occupancy = 0
 
-        self.window.mainloop()
+        self.frame_counter = 0
 
-
-    def update(self):
-        # Get a frame from the video source
-
-        ret, frame = self.vid.get_frame()
-
-        if ret:
-            self.photo = ImageTk.PhotoImage(image=PIL.Image.fromarray(frame))
-
-        self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
-
-        self.window.after(self.delay, self.update)
-
-class MyVideoCapture:
-    def __init__(self, video_source=0):
-         # Open the video source
-        self.vid = cv2.VideoCapture(video_source)
-        if not self.vid.isOpened():
-            raise ValueError("Unable to open video source", video_source)
-
-        # Get video source width and height
-        self.width = self.vid.get(cv2.CAP_PROP_FRAME_WIDTH)
-        self.height = self.vid.get(cv2.CAP_PROP_FRAME_HEIGHT)
-
-   # Release the video source when the object is destroyed
     def __del__(self):
-        if self.vid.isOpened():
-            self.vid.release()
+        cv2.destroyWindow(self.window_title)
 
+    def process(self):
+        self.frame = self.camera.get_frame()
+        self.frame_counter += 1
+        if(self.frame_counter == 9):
+            #shit goes here
+            self.frame_counter = 0;
+            pass
+        else:
+            pass
+
+    def ux_annotate(self):
+        self.frame = cv2.rectangle(self.frame, (0, 0), (self.camera.width, int(0.1 * self.camera.height)), (0, 0, 0), -1)
+        self.frame = cv2.rectangle(self.frame, (0, self.camera.height), (self.camera.width, int(0.9 * self.camera.height)), (0, 0, 0), -1)
+        textsize = cv2.getTextSize(self.location_name, cv2.FONT_HERSHEY_COMPLEX, 1.5, 3)[0]
+
+        self.frame = cv2.putText(self.frame, self.location_name, ((self.camera.width - textsize[0]) // 2, (int(0.1 * self.camera.height) + textsize[1]) // 2), cv2.FONT_HERSHEY_COMPLEX, 1.5, (255, 255, 255), 3)
+
+        textsize = cv2.getTextSize("Occupancy: " + str(self.occupancy), cv2.FONT_HERSHEY_COMPLEX, 1.5, 3)[0]
+        if(self.occupancy < self.occupancy_limit):
+            self.frame = cv2.putText(self.frame, "Occupancy: " + str(self.occupancy), ((self.camera.width - textsize[0]) // 2, (int(0.1 * self.camera.height) + textsize[1]) // 2 + int(0.9 * self.camera.height)), cv2.FONT_HERSHEY_COMPLEX, 1.5, (0, 255, 0), 3)
+        else:
+            self.frame = cv2.putText(self.frame, "Occupancy: " + str(self.occupancy), ((self.camera.width - textsize[0]) // 2, (int(0.1 * self.camera.height) + textsize[1]) // 2 + int(0.9 * self.camera.height)), cv2.FONT_HERSHEY_COMPLEX, 1.5, (0, 0, 255), 3)
+
+    #blob array is of form [((x1, y1) (x2, y2)), ...]
+    def person_annotate(self, blob_array):
+        pass
+
+    def person_enter(self):
+        self.occupancy += 1;
+
+    def person_exit(self):
+        self.occupancy -= 1;
+        if(self.occupancy <= 0):
+            self.occupancy = 0;
+
+    def run(self):
+        while True:
+            self.process()
+            self.ux_annotate()
+            self.person_annotate([((0, 0), (0, 0))])
+            cv2.imshow(self.window_title, self.frame)
+            cv2.waitKey(1)
+
+class Camera:
+    def __init__(self, video_source):
+        self.camera = cv2.VideoCapture(video_source)
+
+        self.width = int(self.camera.get(cv2.CAP_PROP_FRAME_WIDTH))
+        self.height = int(self.camera.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    def __del__(self):
+        if self.camera.isOpened():
+            self.camera.release()
 
     def get_frame(self):
-        ret = None
-        if self.vid.isOpened():
-            ret, frame = self.vid.read()
+        if self.camera.isOpened():
+            ret, frame = self.camera.read()
             if ret:
-                # Return a boolean success flag and the current frame converted to BGR
-                return (ret, cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-            else:
-                return (ret, None)
-        else:
-            return (ret, None)
+                return frame
+        return None
+
 if __name__ == '__main__':
-    App(tkinter.Tk(), "Tkinter and OpenCV")
+    gui = GUI("Occupancy Tracking", "Clough Undergraduate Learning Commons", 15)
+    gui.run()
