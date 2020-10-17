@@ -26,8 +26,9 @@ class GUI:
         self.pool = ThreadPool(processes=1)
 
         self.ml_frames = None
-
         self.async_result = self.pool.apply_async(self.call_model, (self.frame,))  # tuple of args for foo
+
+        self.prev_centers = list()
 
 
     def process(self):
@@ -37,12 +38,67 @@ class GUI:
 
             self.frame_counter = 0
 
+            # await async call
             return_val = self.async_result.get()  # get the return value
 
+            # Box updates
             self.ml_frames = return_val
+
+            # count update
+            self.count_peeps(return_val)
+
+            # start new async call
             self.async_result = self.pool.apply_async(self.call_model, (self.frame,))
         else:
             pass
+
+    def count_peeps(self, model_output):
+
+        new_centers = list()
+        for output in model_output:
+
+            x1, y1, x2, y2, label_name = output
+
+            x_avg = (x1 + x2)/2
+            y_avg = (y1 + y2)/2
+            new_centers.append((x_avg, y_avg))
+
+        self.match_centers(self.prev_centers, new_centers)
+        self.prev_centers = new_centers
+
+    def match_centers(self, old_centers, new_centers, min_dist=0.3):
+        old_centers = np.array(old_centers)
+        new_centers = np.array(new_centers)
+
+
+        if len(new_centers) == 0 :
+            return
+        elif len(old_centers) == 0:
+            candidate = new_centers.copy()
+        else:
+            dists = self.pairwise_dist(old_centers, new_centers)
+            min_dists = np.amin(dists, axis=0)
+            candidate = new_centers[min_dists > min_dist]
+
+
+        for x, y in candidate:
+            if x < 0.2:
+                self.person_enter()
+
+    def pairwise_dist(self, x, y):
+
+        # (x-y)^2 = x^2 - 2xy + y^2
+
+        first = np.sum(x ** 2, axis=1)
+        middle = (-2) * np.dot(x, y.T)
+        last = np.sum(y ** 2, axis=1)
+
+        # For broadcasting
+        dists = np.expand_dims(first, axis=1) + middle + last
+
+        # To prevent rounding issues
+        dists[dists < 0] = 0
+        return dists ** (1 / 2)
 
     def update(self, model_output):
         # print(model_output)
@@ -85,12 +141,12 @@ class GUI:
         pass
 
     def person_enter(self):
-        self.occupancy += 1;
+        self.occupancy += 1
 
     def person_exit(self):
-        self.occupancy -= 1;
+        self.occupancy -= 1
         if(self.occupancy <= 0):
-            self.occupancy = 0;
+            self.occupancy = 0
 
     def add_person_array(self, array):
         self.blob_array = array
