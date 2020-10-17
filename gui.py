@@ -25,6 +25,8 @@ class GUI:
 
         self.pool = ThreadPool(processes=1)
 
+        self.ml_frames = None
+
         self.async_result = self.pool.apply_async(self.call_model, (self.frame,))  # tuple of args for foo
 
 
@@ -37,7 +39,7 @@ class GUI:
 
             return_val = self.async_result.get()  # get the return value
 
-            self.update(return_val)
+            self.ml_frames = return_val
             self.async_result = self.pool.apply_async(self.call_model, (self.frame,))
         else:
             pass
@@ -63,6 +65,9 @@ class GUI:
         textsize = cv2.getTextSize(self.location_name, cv2.FONT_HERSHEY_COMPLEX, 1.5, 3)[0]
 
         self.frame = cv2.putText(self.frame, self.location_name, ((self.camera.width - textsize[0]) // 2, (int(0.1 * self.camera.height) + textsize[1]) // 2), cv2.FONT_HERSHEY_COMPLEX, 1.5, (255, 255, 255), 2)
+
+        if self.ml_frames is not None:
+            self.update(self.ml_frames)
 
         textsize = cv2.getTextSize("Occupancy: " + str(self.occupancy), cv2.FONT_HERSHEY_COMPLEX, 1.5, 2)[0]
         if(self.occupancy < self.occupancy_limit):

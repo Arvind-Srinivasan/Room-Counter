@@ -27,11 +27,11 @@ device = torch.device("cuda:0" if use_cuda else "cpu")
 
 
 WEIGHTS = "tuned_proper_coco_2.pt"
-# Parameters
-params = {'batch_size': 1,
-          'num_workers': 6}
+# # Parameters
+# params = {'batch_size': 1,
+#           'num_workers': 6}
 
-eval_generator = get_dataloader(params)
+# eval_generator = get_dataloader(params)
 
 retinanet = model.resnet18(num_classes=1, pretrained=False).to(device)
 retinanet.load_state_dict(torch.load(WEIGHTS, map_location=device))
