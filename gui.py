@@ -1,5 +1,7 @@
 import cv2
 import numpy as np
+from multiprocessing.pool import ThreadPool
+from controller import infer
 
 class GUI:
     import cv2
@@ -21,15 +23,38 @@ class GUI:
         #blob array is of form [((x1, y1) (x2, y2)), ...]
         self.blob_array = []
 
+        self.pool = ThreadPool(processes=1)
+
+        self.async_result = self.pool.apply_async(self.call_model, (self.frame,))  # tuple of args for foo
+
+
     def process(self):
         self.frame = self.camera.get_frame()
         self.frame_counter += 1
         if(self.frame_counter == 9):
-            #shit goes here
-            self.frame_counter = 0;
-            pass
+
+            self.frame_counter = 0
+
+            return_val = self.async_result.get()  # get the return value
+
+            self.update(return_val)
+            self.async_result = self.pool.apply_async(self.call_model, (self.frame,))
         else:
             pass
+
+    def update(self, model_output):
+        # print(model_output)
+
+        for output in model_output:
+
+            x1, y1, x2, y2, label_name = output
+
+            start_point = (int(x1 * self.camera.width), int(y1 * self.camera.height))
+            end_point = (int(x2* self.camera.width), int(y2 * self.camera.height))
+            color = (0, 0, 255)
+
+            self.frame = cv2.rectangle(self.frame, start_point, end_point, color, 10)
+            return
 
     def ux_annotate(self):
         self.frame = cv2.copyMakeBorder(self.frame, int(0.1 * self.camera.height), int(0.1 * self.camera.height), 0, 0, cv2.BORDER_CONSTANT, (0, 0, 0))
@@ -66,13 +91,16 @@ class GUI:
     def add_person_array(self, array):
         self.blob_array = array
 
+    def call_model(self, image):
+        return infer(image)
+
     def run(self):
         while True:
             self.process()
             self.person_annotate()
             self.ux_annotate()
             cv2.imshow(self.window_title, self.frame)
-            if(cv2.waitKey(1) == 27 or cv2.getWindowProperty(self.window_title, 0) < 1):
+            if(cv2.waitKey(10) == 27 or cv2.getWindowProperty(self.window_title, 0) < 1):
                 cv2.destroyAllWindows()
                 break
 
