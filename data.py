@@ -3,6 +3,7 @@ import torch
 import torch.optim as optim
 import os
 from torchvision import transforms, utils
+import torchvision.datasets as dset
 from PIL import Image
 use_cuda = torch.cuda.is_available()
 device = torch.device("cuda:0" if use_cuda else "cpu")
@@ -136,8 +137,111 @@ def get_dataloader(params):
     return dl
 
 
+VOC_DICT = {
+    "__background__": 0,
+    "person": 1,
+    "bird": 2,
+    "cat": 3,
+    "cow": 4,
+    "dog": 5,
+    "horse": 6,
+    "sheep": 7,
+    "aeroplane": 8,
+    "bicycle": 9,
+    "boat": 10,
+    "bus": 11,
+    "car": 12,
+    "motorbike": 13,
+    "train": 14,
+    "bottle": 15,
+    "chair": 16,
+    "diningtable": 17,
+    "pottedplant": 18,
+    "sofa": 19,
+    "tvmonitor": 20
+}
+
+INV_VOC_DICT = {
+    0:"__background__",
+    1:"person",
+    2:"bird",
+    3:"cat",
+    4:"cow",
+    5:"dog",
+    6:"horse",
+    7:"sheep",
+    8:"aeroplane",
+    9:"bicycle",
+    10:"boat",
+    11:"bus",
+    12:"car",
+    13:"motorbike",
+    14:"train",
+    15:"bottle",
+    16:"chair",
+    17:"diningtable",
+    18:"pottedplant",
+    19:"sofa",
+    20:"tvmonitor"
+}
+
+def get_voc_generator(path, year, image_set, batch_size, shuffle=True):
+    
+    transform = transforms.Compose([
+        transforms.Resize((256, 256)),
+        transforms.ToTensor()
+    ])
+    def detection_collate_fn(sample_list):
+        img_batch = []
+        target_batch = []
+        max_len = 0
+        for (x, y) in sample_list:
+            x_scale = 256 / x.size[0]
+            y_scale = 256 / x.size[1]
+            img_batch.append(transform(x))
+            y = torch.stack([y[:, 0] * x_scale, y[:, 1] * y_scale, y[:, 2] * x_scale,y[:, 3] * y_scale, y[:, 4]], dim=1)
+            if y.shape[0] > max_len:
+                max_len = y.shape[0]
+            target_batch.append(y)
+            
+        target_tensor = torch.ones((len(target_batch), max_len, 5)) * -1
+        for i in range(target_tensor.shape[0]):
+            j = target_batch[i].shape[0]
+            target_tensor[i, :j] = target_batch[i]
+        img_batch = torch.stack(img_batch)
+        target_tensor = target_tensor
+        return img_batch, target_tensor
+    
+    voc_data = dset.VOCDetection(root = path,
+                                  year = year,
+                                  image_set = image_set,
+                                  target_transform=voc_target_transform)
+    voc_generator = DataLoader(voc_data, batch_size=batch_size, collate_fn=detection_collate_fn, shuffle=shuffle, drop_last=True)
+    return voc_generator
+
+def voc_target_transform(y):
+    truths = []
+    for elem in y["annotation"]["object"]:
+        truth = torch.zeros((5, ), dtype=torch.float)
+        truth[0] = int(elem["bndbox"]["xmin"])
+        truth[1] = int(elem["bndbox"]["ymin"])
+        truth[2] = int(elem["bndbox"]["xmax"])
+        truth[3] = int(elem["bndbox"]["ymax"])
+        truth[4] = VOC_DICT[elem["name"]] - 1
+        truths.append(truth)
+    if truths:
+        truth_array = torch.stack(truths, dim=0)
+    else:
+        truth_array = torch.zeros((0, 5), dtype=torch.float)
+
+    return truth_array
+
+
 if __name__ == "__main__":
     # retinanet = model.resnet18(num_classes=2, pretrained=True)
     # print(retinanet)
-    dataset = FaceMaskDataset(imgs_path="./data/images", anns_path="./data/annotations")
-    print(dataset[345])
+#     dataset = FaceMaskDataset(imgs_path="./data/images", anns_path="./data/annotations")
+#     print(dataset[345])
+    
+    voc_train_generator = get_voc_generator('/srv/datasets/pascalvoc-2012', "2012", "train", 3)
+    print(next(iter(voc_train_generator))[1])
