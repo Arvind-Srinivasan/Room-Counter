@@ -13,9 +13,12 @@ class GUI:
         self.location_name = location_name
         self.occupancy_limit = occupancy_limit
 
-        self.occupancy = 0
+        self.occupancy = 20
 
         self.frame_counter = 0
+
+        #blob array is of form [((x1, y1) (x2, y2)), ...]
+        self.blob_array = [((15, 15), (200, 200))]
 
     def __del__(self):
         cv2.destroyWindow(self.window_title)
@@ -43,8 +46,14 @@ class GUI:
         else:
             self.frame = cv2.putText(self.frame, "Occupancy: " + str(self.occupancy), ((self.camera.width - textsize[0]) // 2, (int(0.1 * self.camera.height) + textsize[1]) // 2 + int(0.9 * self.camera.height)), cv2.FONT_HERSHEY_COMPLEX, 1.5, (0, 0, 255), 3)
 
-    #blob array is of form [((x1, y1) (x2, y2)), ...]
-    def person_annotate(self, blob_array):
+
+    def person_annotate(self):
+        if(self.occupancy < self.occupancy_limit):
+            for blob in self.blob_array:
+                self.frame = cv2.rectangle(self.frame, blob[0], blob[1], (0, 255, 0), 3)
+        else:
+            for blob in self.blob_array:
+                self.frame = cv2.rectangle(self.frame, blob[0], blob[1], (0, 0, 255), 3)
         pass
 
     def person_enter(self):
@@ -58,8 +67,8 @@ class GUI:
     def run(self):
         while True:
             self.process()
+            self.person_annotate()
             self.ux_annotate()
-            self.person_annotate([((0, 0), (0, 0))])
             cv2.imshow(self.window_title, self.frame)
             cv2.waitKey(1)
 
