@@ -20,6 +20,12 @@ class_name_to_numbers = {
     'mask_weared_incorrect': 2
 }
 
+numbers_to_class_names = {
+    0: 'with_mask',
+    1: 'without_mask',
+    2: 'mask_weared_incorrect'
+}
+
 class FaceMaskDataset(Dataset):
 
     def __init__(self, imgs_path, anns_path):

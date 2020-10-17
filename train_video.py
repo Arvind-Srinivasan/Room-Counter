@@ -11,7 +11,7 @@ learning_rate = 1e-4
 max_epochs = 100
 
 # Parameters
-params = {'batch_size': 32,
+params = {'batch_size': 8,
           'shuffle': True,
           'num_workers': 6}
 
@@ -50,6 +50,9 @@ def train():
             print(
                 'Epoch: {} | Iteration: {} | Classification loss: {:1.5f} | Regression loss: {:1.5f}'.format(
                     epoch, i, float(classification_loss), float(regression_loss)))
+
+
+        torch.save(retinanet.state_dict(), "weights/" + str(epoch) + "_weights.pt")
 
 
 if __name__ == "__main__":
