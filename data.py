@@ -4,6 +4,8 @@ import torch.optim as optim
 import os
 from torchvision import transforms, utils
 from PIL import Image
+use_cuda = torch.cuda.is_available()
+device = torch.device("cuda:0" if use_cuda else "cpu")
 
 import xml.etree.ElementTree as ET
 from retinanet import model
@@ -42,7 +44,7 @@ class FaceMaskDataset(Dataset):
         img_path = os.path.join(self.imgs_path, "maksssksksss" + self.valid_img_nums[idx] + ".png")
         ann_path = os.path.join(self.anns_path, "maksssksksss" + self.valid_img_nums[idx] + ".xml")
         
-        raw_img = Image.open(img_path)
+        raw_img = Image.open(img_path).convert("RGB")
 
         img = self.transform(raw_img)
 
@@ -90,14 +92,41 @@ def col_func(samples):
     img_list = []
     label_list = []
     for (x, y) in samples:
-        img_list.append(x)
-        label_list.append(y)
+        img_list.append(x.to(device))
+        label_list.append(y.to(device))
     return torch.stack(img_list, dim=0), label_list
 
 
-def get_dataloader():
+def collater(samples):
+    imgs = []
+    labels = []
+    for (x, y) in samples:
+        imgs.append(x)
+        labels.append(y)
+
+    max_num_annots = max(annot.shape[0] for annot in labels)
+
+    if max_num_annots > 0:
+
+        annot_padded = torch.ones((len(labels), max_num_annots, 5)) * -1
+
+        if max_num_annots > 0:
+            for idx, annot in enumerate(labels):
+                # print(annot.shape)
+                if annot.shape[0] > 0:
+                    annot_padded[idx, :annot.shape[0], :] = annot
+    else:
+        annot_padded = torch.ones((len(labels), 1, 5)) * -1
+
+    return torch.stack(imgs, dim=0), annot_padded
+
+
+
+
+def get_dataloader(params):
     dataset = FaceMaskDataset(imgs_path="./data/images", anns_path="./data/annotations")
-    dl = DataLoader(dataset=dataset, collate_fn=col_func)
+    dl = DataLoader(dataset=dataset, collate_fn=collater, **params)
+    print("Got Dataloader")
     return dl
 
 
