@@ -7,6 +7,7 @@ import pdb
 import time
 import argparse
 from retinanet import model
+import matplotlib.pyplot as plt
 
 import sys
 import cv2
@@ -24,15 +25,16 @@ from data import get_dataloader, numbers_to_class_names
 use_cuda = torch.cuda.is_available()
 device = torch.device("cuda:0" if use_cuda else "cpu")
 
-WEIGHTS = "weights/0_weights.pt"
+
+WEIGHTS = "tuned_proper_coco_2.pt"
 # Parameters
 params = {'batch_size': 1,
           'num_workers': 6}
 
 eval_generator = get_dataloader(params)
 
-retinanet = model.resnet18(num_classes=3, pretrained=True).to(device)
-retinanet.load_state_dict(torch.load(WEIGHTS))
+retinanet = model.resnet18(num_classes=1, pretrained=False).to(device)
+retinanet.load_state_dict(torch.load(WEIGHTS, map_location=device))
 
 use_gpu = True
 
@@ -43,17 +45,19 @@ if use_gpu:
 retinanet.eval()
 
 
+
 import torch.nn.functional as F
 
 SIZE = 256
 
 def infer(image):
 
-    image = np.transpose(image, (2, 0, 1))
+    #image = np.transpose(image, (2, 0, 1))
+    image = np.stack([image[:, :, 0], image[:, :, 1], image[:, :, 2]], axis=0)
     image = np.expand_dims(image, axis=0)
     image = torch.from_numpy(image)
     image = image.type(torch.FloatTensor)
-    image = F.interpolate(image, size=256)
+    image = F.interpolate(image, size=256) / 255
 
     with torch.no_grad():
 
@@ -62,7 +66,7 @@ def infer(image):
         else:
             scores, classification, transformed_anchors = retinanet(image)
 
-        idxs = np.where(scores.cpu() > 0.5)
+        idxs = np.where(scores.cpu() > 0.3)
 
         return_list = list()
         for j in range(idxs[0].shape[0]):

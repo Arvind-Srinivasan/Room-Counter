@@ -131,7 +131,7 @@ def collater(samples):
 
 
 def get_dataloader(params):
-    dataset = FaceMaskDataset(imgs_path="./data/images", anns_path="./data/annotations")
+    dataset = FaceMaskDataset(imgs_path="../archive/images", anns_path="../archive/annotations")
     dl = DataLoader(dataset=dataset, collate_fn=collater, **params)
     print("Got Dataloader")
     return dl

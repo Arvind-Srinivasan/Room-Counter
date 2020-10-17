@@ -54,7 +54,6 @@ class GUI:
             color = (0, 0, 255)
 
             self.frame = cv2.rectangle(self.frame, start_point, end_point, color, 10)
-            return
 
     def ux_annotate(self):
         self.frame = cv2.copyMakeBorder(self.frame, int(0.1 * self.camera.height), int(0.1 * self.camera.height), 0, 0, cv2.BORDER_CONSTANT, (0, 0, 0))
