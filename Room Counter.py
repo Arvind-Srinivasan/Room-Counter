@@ -143,24 +143,47 @@ class Camera:
                 return frame
         return None
 
+
+from tkinter import *
+from tkinter import ttk
+
+
+class SettingsWindow:
+
+    def __init__(self, root):
+
+        root.title("Settings")
+
+        mainframe = ttk.Frame(root, padding="3 3 12 12")
+        mainframe.grid(column=0, row=0, sticky=(N, W, E, S))
+        root.columnconfigure(0, weight=1)
+        root.rowconfigure(0, weight=1)
+
+        self.capacity = StringVar()
+        capacity_entry = ttk.Entry(mainframe, width=7, textvariable=self.capacity)
+        capacity_entry.grid(column=2, row=1, sticky=(W, E))
+
+        self.location = StringVar()
+        location_entry = ttk.Entry(mainframe, width=7, textvariable=self.location)
+        location_entry.grid(column=2, row=2, sticky=(W, E))
+
+        ttk.Button(mainframe, text="Submit", command=root.quit).grid(column=2, row=3, sticky=W)
+
+        ttk.Label(mainframe, text="Max Capacity").grid(column=1, row=1, sticky=W)
+        ttk.Label(mainframe, text="Location").grid(column=1, row=2, sticky=E)
+
+        for child in mainframe.winfo_children():
+            child.grid_configure(padx=5, pady=5)
+
+
+
 if __name__ == '__main__':
-    import tkinter as tk
+    root = Tk()
+    win = SettingsWindow(root)
+    root.mainloop()
 
-    master = tk.Tk()
-    tk.Label(master, text="Location").grid(row=0)
-    tk.Label(master, text="Occupancy Limit").grid(row=1)
+    capacity = int(win.capacity.get())
+    location = win.location.get()
 
-    location = tk.Entry(master)
-    occupancy_limit = tk.Entry(master)
-
-    location.grid(row=0, column=1)
-    occupancy_limit.grid(row=1, column=1)
-
-    tk.Button(master, text='Submit', command=master.quit).grid(row=3, column=0, \
-        sticky=tk.W, pady=4)
-
-    master.mainloop()
-    tk.mainloop()
-
-    gui = GUI("Occupancy Tracking", location.get(), int(occupancy_limit.get()))
+    gui = GUI("Occupancy Tracking", location, capacity)
     gui.run()
