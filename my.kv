@@ -1,0 +1,25 @@
+<MainWindow>:
+
+    FloatLayout:
+        Label:
+            id: title
+            pos_hint:{"x": 0.1, "top":0.9}
+            size_hint:0.8, 0.2
+            text: "Capacity Tracker"
+
+
+        Button:
+            pos_hint:{"x":0.2, "y": 0.5}
+            size_hint:0.6,0.2
+            text: "Begin Tracking"
+            on_release:
+                app.root.current = "login"
+                root.manager.transition.direction = "down"
+
+        Button:
+            pos_hint:{"x":0.2, "y": 0.1}
+            size_hint:0.6,0.2
+            text: "Statistics"
+            on_release:
+                app.root.current = "login"
+                root.manager.transition.direction = "down"
