@@ -3,6 +3,8 @@ import numpy as np
 from multiprocessing.pool import ThreadPool
 from controller import infer
 
+from sort import find_new
+
 class GUI:
     import cv2
     def __init__(self, window_title, location_name, occupancy_limit, video_source = 0):
@@ -27,8 +29,11 @@ class GUI:
 
         self.ml_frames = None
         self.async_result = self.pool.apply_async(self.call_model, (self.frame,))  # tuple of args for foo
+        
+        
+        self.people = {}
+        self.frame_list = []
 
-        self.prev_centers = list()
 
 
     def process(self):
@@ -39,73 +44,38 @@ class GUI:
             self.frame_counter = 0
 
             # await async call
-            return_val = self.async_result.get()  # get the return value
+            return_array = self.async_result.get()  # get the return value
 
             # Box updates
-            self.ml_frames = return_val
+            self.ml_frames = return_array
+            self.frame_list.append(return_array)
+            
+            if len(self.frame_list) == 3:
+                self.frame_list = self.frame_list[1:]
 
             # count update
-            self.count_peeps(return_val)
+            if len(self.frame_list) == 2:
+                d_count, new_people = find_new(self.frame_list[0], self.frame_list[1], self.people, None)
+                self.people = new_people
+                if d_count > 0:
+                    self.person_enter(d_count)
+                elif d_count < 0:
+                    self.person_exit(-1 * d_count)
 
             # start new async call
             self.async_result = self.pool.apply_async(self.call_model, (self.frame,))
         else:
             pass
 
-    def count_peeps(self, model_output):
-
-        new_centers = list()
-        for output in model_output:
-
-            x1, y1, x2, y2, label_name = output
-
-            x_avg = (x1 + x2)/2
-            y_avg = (y1 + y2)/2
-            new_centers.append((x_avg, y_avg))
-
-        self.match_centers(self.prev_centers, new_centers)
-        self.prev_centers = new_centers
-
-    def match_centers(self, old_centers, new_centers, min_dist=0.3):
-        old_centers = np.array(old_centers)
-        new_centers = np.array(new_centers)
-
-
-        if len(new_centers) == 0 :
-            return
-        elif len(old_centers) == 0:
-            candidate = new_centers.copy()
-        else:
-            dists = self.pairwise_dist(old_centers, new_centers)
-            min_dists = np.amin(dists, axis=0)
-            candidate = new_centers[min_dists > min_dist]
-
-
-        for x, y in candidate:
-            if x < 0.2:
-                self.person_enter()
-
-    def pairwise_dist(self, x, y):
-
-        # (x-y)^2 = x^2 - 2xy + y^2
-
-        first = np.sum(x ** 2, axis=1)
-        middle = (-2) * np.dot(x, y.T)
-        last = np.sum(y ** 2, axis=1)
-
-        # For broadcasting
-        dists = np.expand_dims(first, axis=1) + middle + last
-
-        # To prevent rounding issues
-        dists[dists < 0] = 0
-        return dists ** (1 / 2)
 
     def update(self, model_output):
         # print(model_output)
 
         for output in model_output:
-
-            x1, y1, x2, y2, label_name = output
+            x1 = output[0]
+            y1 = output[1]
+            x2 = output[2]
+            y2 = output[3]
 
             start_point = (int(x1 * self.camera.width), int(y1 * self.camera.height))
             end_point = (int(x2* self.camera.width), int(y2 * self.camera.height))
@@ -139,11 +109,12 @@ class GUI:
             for blob in self.blob_array:
                 self.frame = cv2.rectangle(self.frame, blob[0], blob[1], (0, 0, 255), 2)
         pass
+    
 
-    def person_enter(self):
-        self.occupancy += 1
+    def person_enter(self, num=1):
+        self.occupancy += num
 
-    def person_exit(self):
+    def person_exit(self, num=1):
         self.occupancy -= 1
         if(self.occupancy <= 0):
             self.occupancy = 0
