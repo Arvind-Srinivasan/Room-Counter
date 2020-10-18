@@ -150,9 +150,17 @@ from tkinter import ttk
 
 class SettingsWindow:
 
+
+
     def __init__(self, root):
 
-        root.title("Settings")
+        def testVal(inStr, acttyp):
+            if acttyp == '1':  # insert
+                if not inStr.isdigit():
+                    return False
+            return True
+
+        root.title("Room Counter")
 
         mainframe = ttk.Frame(root, padding="3 3 12 12")
         mainframe.grid(column=0, row=0, sticky=(N, W, E, S))
@@ -160,17 +168,18 @@ class SettingsWindow:
         root.rowconfigure(0, weight=1)
 
         self.capacity = StringVar()
-        capacity_entry = ttk.Entry(mainframe, width=7, textvariable=self.capacity)
-        capacity_entry.grid(column=2, row=1, sticky=(W, E))
+        capacity_entry = ttk.Entry(mainframe, width=7, textvariable=self.capacity, validate="key")
+        capacity_entry['validatecommand'] = (capacity_entry.register(testVal), '%P', '%d')
+        capacity_entry.grid(column=2, row=2, sticky=(W, E))
 
         self.location = StringVar()
         location_entry = ttk.Entry(mainframe, width=7, textvariable=self.location)
-        location_entry.grid(column=2, row=2, sticky=(W, E))
+        location_entry.grid(column=2, row=1, sticky=(W, E))
 
-        ttk.Button(mainframe, text="Submit", command=root.quit).grid(column=2, row=3, sticky=W)
+        ttk.Button(mainframe, text="Start", command=root.quit).grid(column=2, row=3, sticky=W)
 
-        ttk.Label(mainframe, text="Max Capacity").grid(column=1, row=1, sticky=W)
-        ttk.Label(mainframe, text="Location").grid(column=1, row=2, sticky=E)
+        ttk.Label(mainframe, text="Max Capacity").grid(column=1, row=2, sticky=W)
+        ttk.Label(mainframe, text="Location").grid(column=1, row=1, sticky=E)
 
         for child in mainframe.winfo_children():
             child.grid_configure(padx=5, pady=5)
@@ -182,8 +191,9 @@ if __name__ == '__main__':
     win = SettingsWindow(root)
     root.mainloop()
 
-    capacity = int(win.capacity.get())
-    location = win.location.get()
+    if(win.capacity.get() != '' or win.location.get() != ''):
+        capacity = int(win.capacity.get())
+        location = win.location.get()
 
-    gui = GUI("Occupancy Tracking", location, capacity)
-    gui.run()
+        gui = GUI("Room Counter", location, capacity)
+        gui.run()
