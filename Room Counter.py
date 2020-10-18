@@ -29,8 +29,8 @@ class GUI:
 
         self.ml_frames = None
         self.async_result = self.pool.apply_async(self.call_model, (self.frame,))  # tuple of args for foo
-        
-        
+
+
         self.people = {}
         self.frame_list = []
 
@@ -49,7 +49,7 @@ class GUI:
             # Box updates
             self.ml_frames = return_array
             self.frame_list.append(return_array)
-            
+
             if len(self.frame_list) == 3:
                 self.frame_list = self.frame_list[1:]
 
@@ -68,10 +68,10 @@ class GUI:
             pass
 
     def ux_annotate(self):
-        self.frame = cv2.copyMakeBorder(self.frame, int(0.1 * self.camera.height), int(0.1 * self.camera.height), 0, 0, cv2.BORDER_CONSTANT, (0, 0, 0))
+        self.frame = cv2.copyMakeBorder(self.frame, int(0.1 * self.camera.height), int(0.2 * self.camera.height), 0, 0, cv2.BORDER_CONSTANT, (0, 0, 0))
 
         self.frame = cv2.rectangle(self.frame, (0, 0), (self.camera.width, int(0.1 * self.camera.height)), (0, 0, 0), -1)
-        self.frame = cv2.rectangle(self.frame, (0, int(1.1 * self.camera.height)), (self.camera.width, int(1.2 * self.camera.height)), (0, 0, 0), -1)
+        self.frame = cv2.rectangle(self.frame, (0, int(1.1 * self.camera.height)), (self.camera.width, int(1.3 * self.camera.height)), (0, 0, 0), -1)
         textsize = cv2.getTextSize(self.location_name, cv2.FONT_HERSHEY_COMPLEX, 1.5, 3)[0]
 
         self.frame = cv2.putText(self.frame, self.location_name, ((self.camera.width - textsize[0]) // 2, (int(0.1 * self.camera.height) + textsize[1]) // 2), cv2.FONT_HERSHEY_COMPLEX, 1.5, (255, 255, 255), 2)
@@ -81,6 +81,10 @@ class GUI:
             self.frame = cv2.putText(self.frame, "Occupancy: " + str(self.occupancy), ((self.camera.width - textsize[0]) // 2, (int(0.1 * self.camera.height) + textsize[1]) // 2 + int(1.1 * self.camera.height)), cv2.FONT_HERSHEY_COMPLEX, 1.5, (0, 255, 0), 2)
         else:
             self.frame = cv2.putText(self.frame, "Occupancy: " + str(self.occupancy), ((self.camera.width - textsize[0]) // 2, (int(0.1 * self.camera.height) + textsize[1]) // 2 + int(1.1 * self.camera.height)), cv2.FONT_HERSHEY_COMPLEX, 1.5, (0, 0, 255), 2)
+
+
+        textsize = cv2.getTextSize("Occupancy Limit: " + str(self.occupancy_limit), cv2.FONT_HERSHEY_COMPLEX, 1.5, 2)[0]
+        self.frame = cv2.putText(self.frame, "Occupancy Limit: " + str(self.occupancy_limit), ((self.camera.width - textsize[0]) // 2, (int(0.1 * self.camera.height) + textsize[1]) // 2 + int(1.2 * self.camera.height)), cv2.FONT_HERSHEY_COMPLEX, 1.5, (255, 255, 255), 2)
 
     def person_annotate(self):
         if self.ml_frames is not None:
@@ -95,7 +99,7 @@ class GUI:
             for blob in self.blob_array:
                 self.frame = cv2.rectangle(self.frame, blob[0], blob[1], (0, 0, 255), 2)
         pass
-    
+
 
     def person_enter(self, num=1):
         self.occupancy += num
