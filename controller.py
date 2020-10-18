@@ -66,7 +66,7 @@ def infer(image):
         else:
             scores, classification, transformed_anchors = retinanet(image)
 
-        idxs = np.where(scores.cpu() > 0.3)
+        idxs = np.where(scores.cpu() > 0.32)
 
         return_list = list()
         for j in range(idxs[0].shape[0]):
@@ -75,8 +75,12 @@ def infer(image):
             y1 = int(bbox[1]) / SIZE
             x2 = int(bbox[2]) / SIZE
             y2 = int(bbox[3]) / SIZE
-            label_name = numbers_to_class_names[int(classification[idxs[0][j]])]
+            #label_name = numbers_to_class_names[int(classification[idxs[0][j]])]
 
-            return_list.append((x1, y1, x2, y2, label_name))
-
-        return return_list
+            return_list.append(np.array([x1, y1, x2, y2]))
+        
+        if return_list:
+            
+            return np.stack(return_list, axis=0)
+        else:
+            return np.zeros((0, 4))
