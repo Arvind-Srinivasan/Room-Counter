@@ -7,10 +7,10 @@ Usage:
 
 from setuptools import setup
 
-APP = ['main.py']
-DATA_FILES = ['./tuned_proper_coco_2.pt']
-OPTIONS = {}
-MODULES = {}
+APP = ['Room Counter.py']
+DATA_FILES = ['--iconfile', './tuned_proper_coco_2.pt']
+OPTIONS = {'iconfile': '/Users/ericgu/Documents/backend2020/images/icon.icns'}
+
 setup(
     app=APP,
     data_files=DATA_FILES,

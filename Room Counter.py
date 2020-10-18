@@ -67,22 +67,6 @@ class GUI:
         else:
             pass
 
-
-    def update(self, model_output):
-        # print(model_output)
-
-        for output in model_output:
-            x1 = output[0]
-            y1 = output[1]
-            x2 = output[2]
-            y2 = output[3]
-
-            start_point = (int(x1 * self.camera.width), int(y1 * self.camera.height))
-            end_point = (int(x2* self.camera.width), int(y2 * self.camera.height))
-            color = (0, 0, 255)
-
-            self.frame = cv2.rectangle(self.frame, start_point, end_point, color, 10)
-
     def ux_annotate(self):
         self.frame = cv2.copyMakeBorder(self.frame, int(0.1 * self.camera.height), int(0.1 * self.camera.height), 0, 0, cv2.BORDER_CONSTANT, (0, 0, 0))
 
@@ -92,9 +76,6 @@ class GUI:
 
         self.frame = cv2.putText(self.frame, self.location_name, ((self.camera.width - textsize[0]) // 2, (int(0.1 * self.camera.height) + textsize[1]) // 2), cv2.FONT_HERSHEY_COMPLEX, 1.5, (255, 255, 255), 2)
 
-        if self.ml_frames is not None:
-            self.update(self.ml_frames)
-
         textsize = cv2.getTextSize("Occupancy: " + str(self.occupancy), cv2.FONT_HERSHEY_COMPLEX, 1.5, 2)[0]
         if(self.occupancy < self.occupancy_limit):
             self.frame = cv2.putText(self.frame, "Occupancy: " + str(self.occupancy), ((self.camera.width - textsize[0]) // 2, (int(0.1 * self.camera.height) + textsize[1]) // 2 + int(1.1 * self.camera.height)), cv2.FONT_HERSHEY_COMPLEX, 1.5, (0, 255, 0), 2)
@@ -102,6 +83,11 @@ class GUI:
             self.frame = cv2.putText(self.frame, "Occupancy: " + str(self.occupancy), ((self.camera.width - textsize[0]) // 2, (int(0.1 * self.camera.height) + textsize[1]) // 2 + int(1.1 * self.camera.height)), cv2.FONT_HERSHEY_COMPLEX, 1.5, (0, 0, 255), 2)
 
     def person_annotate(self):
+        if self.ml_frames is not None:
+            self.blob_array = []
+            for frame in self.ml_frames:
+                self.blob_array.append(((int(frame[0] * self.camera.width), int(frame[1] * self.camera.height)),(int(frame[2] * self.camera.width), int(frame[3] * self.camera.height))))
+
         if(self.occupancy < self.occupancy_limit):
             for blob in self.blob_array:
                 self.frame = cv2.rectangle(self.frame, blob[0], blob[1], (0, 255, 0), 2)
