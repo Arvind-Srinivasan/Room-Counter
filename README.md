@@ -30,4 +30,5 @@ Deployment is to macOS apps using py2app. To run this, follow the steps on their
  
 ## Credits
 We used [this](https://github.com/yhenon/pytorch-retinanet) implementation of retinanet, then trained with our own scripts
+
 Our tracking algorithm is the [SORT](https://arxiv.org/pdf/1602.00763.pdf) algorithm
