@@ -144,5 +144,23 @@ class Camera:
         return None
 
 if __name__ == '__main__':
-    gui = GUI("Occupancy Tracking", "Clough Undergraduate Learning Commons", 15)
+    import tkinter as tk
+
+    master = tk.Tk()
+    tk.Label(master, text="Location").grid(row=0)
+    tk.Label(master, text="Occupancy Limit").grid(row=1)
+
+    location = tk.Entry(master)
+    occupancy_limit = tk.Entry(master)
+
+    location.grid(row=0, column=1)
+    occupancy_limit.grid(row=1, column=1)
+
+    tk.Button(master, text='Submit', command=master.quit).grid(row=3, column=0, \
+        sticky=tk.W, pady=4)
+
+    master.mainloop()
+    tk.mainloop()
+
+    gui = GUI("Occupancy Tracking", location.get(), int(occupancy_limit.get()))
     gui.run()
